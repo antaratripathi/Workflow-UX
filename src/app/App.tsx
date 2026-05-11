@@ -7,7 +7,7 @@ import {
   Mail, Image, Smartphone, Monitor, ShoppingBag,
   BarChart3, MessageSquare, Eye, Users, FileText,
   PenLine, LayoutGrid, ArrowRight, CircleCheck, Sparkles,
-  Plus, Clock, Settings
+  Plus, Clock, Settings, RotateCcw
 } from 'lucide-react';
 import svgPaths from "../imports/StartANewResearch-1/svg-emgwynddh2";
 import { imgContent } from "../imports/StartANewResearch-1/svg-c2tfl";
@@ -15,7 +15,7 @@ import { imgContent } from "../imports/StartANewResearch-1/svg-c2tfl";
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 type AppView = 'landing' | 'workflow' | 'tool' | 'success';
-type UploadedFile = { name: string; type: string; size: number };
+type UploadedFile = { name: string; type: string; size: number; preview?: string };
 type Criterion = { id: string; label: string; hint: string; selected: boolean };
 type CriterionDef = { id: string; label: string; hint: string };
 type ExecStep = { label: string; trigger: 'Default' | 'Conditional'; condition?: string; color: string; ToolIcon: typeof MessageSquare };
@@ -92,7 +92,7 @@ const TOOL_TAG_PASTELS: Record<string, { bg: string; border: string; icon: strin
 // ─── Workflow Use Cases ──────────────────────────────────────────────────────
 
 const STEP_COLORS = ['#4F6EF7', '#8B5CF6', '#F43F5E', '#10B981'];
-const STEP_LABELS = ['Choose Goal', 'Select Scenario', 'Upload Assets', 'Review & Submit'];
+const STEP_LABELS = ['Choose Goal', 'Select Scenario', 'Upload Assets', 'Select Audience', 'Review & Submit'];
 
 const USE_CASES = [
   {
@@ -109,7 +109,7 @@ const USE_CASES = [
   },
   {
     id: 'launch-readiness',
-    title: 'Launch Readiness Check',
+    title: 'Strategic Concept Validation',
     tagline: 'Pre-flight · Single asset',
     description: 'Evaluate a near-final creative for red flags, clarity gaps, and brand risk before go-live',
     tools: [
@@ -420,7 +420,7 @@ function StepProgress({ step }: { step: number }) {
               </div>
               <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, fontWeight: isActive ? 600 : 400, color: isActive ? VIOLET_ACTIVE : isDone ? 'rgba(10,10,10,0.55)' : 'rgba(10,10,10,0.3)', whiteSpace: 'nowrap', lineHeight: '16px' }}>{label}</p>
             </div>
-            {i < 3 && <div className="flex-1 mx-2 mt-[-18px]" style={{ height: 1.5, background: step > idx ? VIOLET_ACTIVE : 'rgba(10,10,10,0.1)', borderRadius: 2, transition: 'background 0.3s' }} />}
+            {i < STEP_LABELS.length - 1 && <div className="flex-1 mx-2 mt-[-18px]" style={{ height: 1.5, background: step > idx ? VIOLET_ACTIVE : 'rgba(10,10,10,0.1)', borderRadius: 2, transition: 'background 0.3s' }} />}
           </div>
         );
       })}
@@ -430,10 +430,10 @@ function StepProgress({ step }: { step: number }) {
 
 // ─── Workflow Steps ──────────────────────────────────────────────────────────
 
-function Step2({ useCaseId, selected, onSelect }: { useCaseId: string; selected: string | null; onSelect: (id: string) => void }) {
+function Step2({ useCaseId, selected, onSelect, briefFile, onBriefFileChange }: { useCaseId: string; selected: string | null; onSelect: (id: string) => void; briefFile: string | null; onBriefFileChange: (name: string | null) => void }) {
   const uc = USE_CASES.find(u => u.id === useCaseId)!;
   const contexts = CONTEXTS[useCaseId] ?? [];
-  const [briefFile, setBriefFile] = useState<string | null>(null);
+  const setBriefFile = onBriefFileChange;
   return (
     <div className="flex flex-col gap-4">
       <div>
@@ -496,11 +496,16 @@ function Step2({ useCaseId, selected, onSelect }: { useCaseId: string; selected:
   );
 }
 
-function Step3({ useCaseId, files, onFilesChange, audience, onAudienceChange }: { useCaseId: string; files: UploadedFile[]; onFilesChange: (f: UploadedFile[]) => void; audience: string | null; onAudienceChange: (id: string) => void; }) {
+function Step3({ useCaseId, files, onFilesChange }: { useCaseId: string; files: UploadedFile[]; onFilesChange: (f: UploadedFile[]) => void; }) {
   const uc = USE_CASES.find(u => u.id === useCaseId)!;
   const [dragging, setDragging] = useState(false);
   const processFiles = useCallback((fileList: FileList) => {
-    const newFiles = Array.from(fileList).map(f => ({ name: f.name, type: f.type, size: f.size }));
+    const newFiles: UploadedFile[] = Array.from(fileList).map(f => ({
+      name: f.name,
+      type: f.type,
+      size: f.size,
+      preview: f.type.startsWith('image/') ? URL.createObjectURL(f) : undefined,
+    }));
     onFilesChange([...files, ...newFiles]);
   }, [files, onFilesChange]);
   const getFileIcon = (type: string) => {
@@ -540,7 +545,10 @@ function Step3({ useCaseId, files, onFilesChange, audience, onAudienceChange }: 
           {files.map((f, i) => (
             <div key={i} className="flex items-center justify-between rounded-lg px-3 py-2.5" style={{ background: 'white', border: '1px solid rgba(10,10,10,0.1)' }}>
               <div className="flex items-center gap-2.5">
-                <div className="flex items-center justify-center rounded-md" style={{ width: 28, height: 28, background: 'rgba(10,10,10,0.05)' }}>{getFileIcon(f.type)}</div>
+                {f.preview
+                ? <img src={f.preview} alt={f.name} className="rounded-lg object-cover shrink-0" style={{ width: 56, height: 56, border: '1px solid rgba(10,10,10,0.1)', background: 'rgba(10,10,10,0.04)' }} />
+                : <div className="flex items-center justify-center rounded-lg shrink-0" style={{ width: 56, height: 56, background: 'rgba(10,10,10,0.05)' }}>{getFileIcon(f.type)}</div>
+              }
                 <div>
                   <p style={{ fontFamily: 'Inter,sans-serif', fontSize: 13, fontWeight: 500, color: '#0a0a0a', maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</p>
                   <p style={{ fontFamily: 'Inter,sans-serif', fontSize: 11, color: 'rgba(10,10,10,0.4)' }}>{formatSize(f.size)}</p>
@@ -551,36 +559,49 @@ function Step3({ useCaseId, files, onFilesChange, audience, onAudienceChange }: 
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function Step3Audience({ useCaseId, audience, onAudienceChange }: { useCaseId: string; audience: string | null; onAudienceChange: (id: string) => void; }) {
+  const uc = USE_CASES.find(u => u.id === useCaseId)!;
+  return (
+    <div className="flex flex-col gap-5">
       <div>
-        <p style={{ fontFamily: 'Inter,sans-serif', fontWeight: 500, fontSize: 15, color: '#0a0a0a', marginBottom: 10 }}>Select your target audience</p>
-        <div className="flex flex-col gap-2">
-          {AUDIENCES.map(a => {
-            const isSelected = audience === a.id;
-            return (
-              <button key={a.id} onClick={() => onAudienceChange(a.id)}
-                className="flex items-center gap-3 rounded-xl text-left transition-all duration-150"
-                style={{ padding: '11px 14px', background: isSelected ? '#F5F3FF' : 'white', border: isSelected ? '1.5px solid #A78BFA' : '1px solid rgba(10,10,10,0.1)' }}>
-                <div className="flex items-center justify-center rounded-full shrink-0" style={{ width: 32, height: 32, background: isSelected ? '#EDE9FE' : 'rgba(10,10,10,0.05)' }}>
-                  <Users size={15} color={isSelected ? '#7C3AED' : '#0a0a0a'} />
-                </div>
-                <div>
-                  <p style={{ fontFamily: 'Inter,sans-serif', fontWeight: 600, fontSize: 13, color: isSelected ? '#4C1D95' : '#0a0a0a' }}>{a.label}</p>
-                  <p style={{ fontFamily: 'Inter,sans-serif', fontSize: 12, color: isSelected ? 'rgba(76,29,149,0.6)' : 'rgba(10,10,10,0.45)' }}>{a.description}</p>
-                </div>
-                {isSelected && <Check size={14} color="#7C3AED" className="ml-auto" />}
-              </button>
-            );
-          })}
+        <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center justify-center rounded-md" style={{ width: 24, height: 24, background: 'rgba(10,10,10,0.06)' }}><uc.Icon size={13} color="#0a0a0a" /></div>
+          <p style={{ fontFamily: 'Inter,sans-serif', fontSize: 12, fontWeight: 600, color: 'rgba(10,10,10,0.4)', letterSpacing: '0.5px', textTransform: 'uppercase' }}>{uc.title}</p>
         </div>
+        <p style={{ fontFamily: 'Inter,sans-serif', fontWeight: 500, fontSize: 22, lineHeight: '30px', letterSpacing: '-0.44px', color: '#0a0a0a' }}>Select your target audience</p>
+        <p style={{ fontFamily: 'Inter,sans-serif', fontSize: 14, color: 'rgba(10,10,10,0.55)', marginTop: 4, lineHeight: '22px' }}>Choose the audience segment that best matches who you want to evaluate this creative with.</p>
+      </div>
+      <div className="flex flex-col gap-2">
+        {AUDIENCES.map(a => {
+          const isSelected = audience === a.id;
+          return (
+            <button key={a.id} onClick={() => onAudienceChange(a.id)}
+              className="flex items-center gap-3 rounded-xl text-left transition-all duration-150"
+              style={{ padding: '11px 14px', background: isSelected ? '#F5F3FF' : 'white', border: isSelected ? '1.5px solid #A78BFA' : '1px solid rgba(10,10,10,0.1)' }}>
+              <div className="flex items-center justify-center rounded-full shrink-0" style={{ width: 32, height: 32, background: isSelected ? '#EDE9FE' : 'rgba(10,10,10,0.05)' }}>
+                <Users size={15} color={isSelected ? '#7C3AED' : '#0a0a0a'} />
+              </div>
+              <div>
+                <p style={{ fontFamily: 'Inter,sans-serif', fontWeight: 600, fontSize: 13, color: isSelected ? '#4C1D95' : '#0a0a0a' }}>{a.label}</p>
+                <p style={{ fontFamily: 'Inter,sans-serif', fontSize: 12, color: isSelected ? 'rgba(76,29,149,0.6)' : 'rgba(10,10,10,0.45)' }}>{a.description}</p>
+              </div>
+              {isSelected && <Check size={14} color="#7C3AED" className="ml-auto" />}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-function Step4({ useCaseId, contextId, criteria, setCriteria, objective, setObjective, onSubmit }: {
+function Step4({ useCaseId, contextId, criteria, setCriteria, objective, setObjective, onSubmit, onBack }: {
   useCaseId: string; contextId: string;
   criteria: Criterion[]; setCriteria: (c: Criterion[]) => void;
-  objective: string; setObjective: (o: string) => void; onSubmit: () => void;
+  objective: string; setObjective: (o: string) => void; onSubmit: () => void; onBack: () => void;
 }) {
   const uc = USE_CASES.find(u => u.id === useCaseId)!;
   const selectedCount = criteria.filter(c => c.selected).length;
@@ -667,26 +688,37 @@ function Step4({ useCaseId, contextId, criteria, setCriteria, objective, setObje
         <div className="flex items-center gap-2 px-4 py-3 border-b border-[rgba(10,10,10,0.07)]" style={{ background: 'rgba(10,10,10,0.02)' }}>
           <PenLine size={13} color="rgba(10,10,10,0.45)" />
           <p style={{ fontFamily: 'Inter,sans-serif', fontWeight: 600, fontSize: 12, color: 'rgba(10,10,10,0.5)', letterSpacing: '0.4px', textTransform: 'uppercase' }}>Research Objective</p>
-          <span className="ml-auto rounded-full px-2 py-0.5" style={{ background: 'rgba(79,110,247,0.1)', fontFamily: 'Inter,sans-serif', fontSize: 10, fontWeight: 600, color: '#4F6EF7' }}>Auto-generated · Editable</span>
+          <span className="ml-auto rounded-full px-2 py-0.5" style={{ background: 'rgba(124,58,237,0.1)', fontFamily: 'Inter,sans-serif', fontSize: 10, fontWeight: 600, color: '#7C3AED' }}>Auto-generated · Editable</span>
         </div>
         <textarea value={objective} onChange={e => setObjective(e.target.value)} className="w-full resize-none outline-none bg-white px-4 py-3" rows={3} style={{ fontFamily: 'Inter,sans-serif', fontSize: 13, color: '#0a0a0a', lineHeight: '21px' }} />
       </div>
 
-      {/* Evaluation Criteria */}
+      {/* Priority Labeling */}
       <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(10,10,10,0.1)' }}>
         <div className="px-4 py-3 border-b border-[rgba(10,10,10,0.07)]" style={{ background: 'rgba(10,10,10,0.02)' }}>
           <div className="flex items-center gap-2">
             <BarChart3 size={13} color="rgba(10,10,10,0.45)" />
-            <p style={{ fontFamily: 'Inter,sans-serif', fontWeight: 600, fontSize: 12, color: 'rgba(10,10,10,0.5)', letterSpacing: '0.4px', textTransform: 'uppercase' }}>Evaluation Criteria</p>
+            <p style={{ fontFamily: 'Inter,sans-serif', fontWeight: 600, fontSize: 12, color: 'rgba(10,10,10,0.5)', letterSpacing: '0.4px', textTransform: 'uppercase' }}>Priority Labeling</p>
             <span className="ml-auto" style={{ fontFamily: 'Inter,sans-serif', fontSize: 12, color: 'rgba(10,10,10,0.35)' }}>{selectedCount} selected</span>
           </div>
           <div className="flex items-center gap-2 mt-2">
             <span className="rounded-full px-2 py-0.5" style={{ background: 'rgba(10,10,10,0.05)', fontFamily: 'Inter,sans-serif', fontSize: 10, color: 'rgba(10,10,10,0.45)' }}>
-              Drag to reorder
+              Drag to reorder priority
             </span>
             <span className="rounded-full px-2 py-0.5" style={{ background: 'rgba(10,10,10,0.05)', fontFamily: 'Inter,sans-serif', fontSize: 10, color: 'rgba(10,10,10,0.45)' }}>
               Tap to set weight
             </span>
+            <button onClick={() => {
+              const defs = getCriteria(useCaseId, contextId);
+              setCriteria(defs.map((d, i) => ({ id: d.id, label: d.label, hint: d.hint, selected: i < 3 })));
+              setCustomWeights({});
+              setEditingWeight(null);
+            }} className="ml-auto flex items-center gap-1 rounded-full px-2 py-0.5 transition-all hover:bg-[rgba(124,58,237,0.08)]"
+              style={{ background: 'rgba(124,58,237,0.06)', border: '1px solid rgba(124,58,237,0.18)' }}
+              title="Reset to system-suggested percentages">
+              <RotateCcw size={10} color="#7C3AED" />
+              <span style={{ fontFamily: 'Inter,sans-serif', fontSize: 10, fontWeight: 600, color: '#7C3AED' }}>Reset weight</span>
+            </button>
           </div>
         </div>
         <div className="bg-white divide-y divide-[rgba(10,10,10,0.06)]">
@@ -701,11 +733,11 @@ function Step4({ useCaseId, contextId, criteria, setCriteria, objective, setObje
                 key={c.id}
                 layout
                 layoutId={c.id}
-                draggable
-                onDragStart={() => setDragIndex(idx)}
-                onDragOver={e => { e.preventDefault(); setDragOverIndex(idx); }}
-                onDrop={() => handleDrop(idx)}
-                onDragEnd={() => { setDragIndex(null); setDragOverIndex(null); }}
+                draggable={c.selected}
+                onDragStart={c.selected ? () => setDragIndex(idx) : undefined}
+                onDragOver={c.selected ? e => { e.preventDefault(); setDragOverIndex(idx); } : undefined}
+                onDrop={c.selected ? () => handleDrop(idx) : undefined}
+                onDragEnd={c.selected ? () => { setDragIndex(null); setDragOverIndex(null); } : undefined}
                 animate={{
                   scale: (isDragging || isDropTarget) ? 1.015 : 1,
                   backgroundColor: (isDragging || isDropTarget)
@@ -719,28 +751,29 @@ function Step4({ useCaseId, contextId, criteria, setCriteria, objective, setObje
                 transition={{ type: 'spring', stiffness: 380, damping: 28 }}
                 className="relative flex items-start gap-2 px-4 py-3"
                 style={{
-                  cursor: isDragging ? 'grabbing' : 'grab',
-                  borderRadius: 10,
+                  cursor: c.selected ? (isDragging ? 'grabbing' : 'grab') : 'default',
+                  borderRadius: (isDragging || isDropTarget) ? 10 : 0,
                   outline: (isDragging || isDropTarget)
                     ? '1.5px dashed rgba(124,58,237,0.4)'
                     : '1.5px solid transparent',
+                  outlineOffset: -1.5,
                   opacity: 1,
                   position: 'relative',
                 }}
               >
-                {/* Drag handle */}
-                <div className="flex items-center shrink-0" style={{ paddingTop: 3 }}>
-                  <GripVertical size={14} color={isDragging || isDropTarget ? '#7C3AED' : 'rgba(10,10,10,0.2)'} />
+                {/* Drag handle — only for selected (priority-ranked) criteria */}
+                <div className="flex items-center shrink-0" style={{ height: 20, width: 14 }}>
+                  {c.selected && <GripVertical size={14} color={isDragging || isDropTarget ? '#7C3AED' : 'rgba(10,10,10,0.2)'} />}
                 </div>
                 {/* Rank badge */}
-                <div style={{ width: 28, flexShrink: 0, paddingTop: 2 }}>
-                  {rank && <span className="rounded-md px-1.5 py-0.5" style={{ background: '#10B98115', fontFamily: 'Inter,sans-serif', fontSize: 10, fontWeight: 700, color: '#10B981', display: 'inline-block' }}>{rank}</span>}
+                <div className="flex items-center shrink-0" style={{ width: 28, height: 20 }}>
+                  {rank && <span className="rounded-md px-1.5 py-0.5" style={{ background: '#10B98115', fontFamily: 'Inter,sans-serif', fontSize: 10, fontWeight: 700, color: '#10B981', display: 'inline-block', lineHeight: '14px' }}>{rank}</span>}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p style={{ fontFamily: 'Inter,sans-serif', fontSize: 13, fontWeight: c.selected ? 600 : 400, color: c.selected ? '#0a0a0a' : 'rgba(10,10,10,0.4)', lineHeight: '20px' }}>{c.label}</p>
                   <p style={{ fontFamily: 'Inter,sans-serif', fontSize: 11, color: 'rgba(10,10,10,0.4)', lineHeight: '16px', marginTop: 2 }}>{c.hint}</p>
                 </div>
-                <div className="flex items-center gap-1 shrink-0" style={{ paddingTop: 1 }}>
+                <div className="flex items-center gap-1 shrink-0" style={{ height: 20 }}>
                   {c.selected && selectedCount > 0 && (
                     editingWeight === c.id ? (
                       <div className="flex items-center gap-0.5 mr-1">
@@ -778,49 +811,17 @@ function Step4({ useCaseId, contextId, criteria, setCriteria, objective, setObje
         </div>
       </div>
 
-      {/* Auto-Configured Study Plan */}
-      {(() => {
-        const flow = getExecFlow(useCaseId, contextId);
-        return flow.length > 0 ? (
-          <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(10,10,10,0.1)' }}>
-            <div className="flex items-center gap-2 px-4 py-3 border-b border-[rgba(10,10,10,0.07)]" style={{ background: 'rgba(10,10,10,0.02)' }}>
-              <Zap size={13} color="rgba(10,10,10,0.45)" />
-              <p style={{ fontFamily: 'Inter,sans-serif', fontWeight: 600, fontSize: 12, color: 'rgba(10,10,10,0.5)', letterSpacing: '0.4px', textTransform: 'uppercase' }}>Auto-Configured Study Plan</p>
-              <span className="ml-auto rounded-full px-2 py-0.5" style={{ background: 'rgba(16,185,129,0.1)', fontFamily: 'Inter,sans-serif', fontSize: 10, fontWeight: 600, color: '#10B981' }}>
-                {flow.filter(s => s.trigger === 'Default').length} default · {flow.filter(s => s.trigger === 'Conditional').length} conditional
-              </span>
-            </div>
-            <div className="bg-white divide-y divide-[rgba(10,10,10,0.05)]">
-              {flow.map((s, i) => (
-                <div key={s.label} className="flex items-start gap-3 px-4 py-3">
-                  <div className="flex flex-col items-center shrink-0" style={{ paddingTop: 2 }}>
-                    <div className="flex items-center justify-center rounded-full" style={{ width: 20, height: 20, background: `${s.color}18`, border: `1.5px solid ${s.color}40` }}>
-                      <span style={{ fontFamily: 'Inter,sans-serif', fontSize: 9, fontWeight: 700, color: s.color }}>{i + 1}</span>
-                    </div>
-                    {i < flow.length - 1 && <div style={{ width: 1.5, flex: 1, minHeight: 12, background: 'rgba(10,10,10,0.08)', marginTop: 3 }} />}
-                  </div>
-                  <div className="flex-1 min-w-0 pb-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <div className="flex items-center gap-1.5 rounded-lg px-2.5 py-1" style={{ background: `${s.color}10`, border: `1px solid ${s.color}25` }}>
-                        <s.ToolIcon size={12} color={s.color} />
-                        <span style={{ fontFamily: 'Inter,sans-serif', fontSize: 12, fontWeight: 600, color: s.color }}>{s.label}</span>
-                      </div>
-                      <span className="rounded-full px-2 py-0.5" style={{ fontFamily: 'Inter,sans-serif', fontSize: 10, fontWeight: 700, letterSpacing: '0.3px', background: s.trigger === 'Default' ? 'rgba(16,185,129,0.1)' : 'rgba(249,115,22,0.1)', color: s.trigger === 'Default' ? '#10B981' : '#F97316' }}>{s.trigger.toUpperCase()}</span>
-                    </div>
-                    {s.condition && <p style={{ fontFamily: 'Inter,sans-serif', fontSize: 11, color: 'rgba(10,10,10,0.45)', lineHeight: '16px', marginTop: 5 }}>⚡ {s.condition}</p>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null;
-      })()}
-
-      <button onClick={onSubmit} className="flex items-center justify-center gap-2 rounded-xl w-full transition-all duration-200 hover:opacity-90 active:scale-[0.99]" style={{ height: 48, background: '#0a0a0a', marginTop: 4 }}>
-        <Sparkles size={16} color="white" />
-        <span style={{ fontFamily: 'Inter,sans-serif', fontWeight: 600, fontSize: 15, color: 'white' }}>Start Research</span>
-        <ArrowRight size={15} color="white" />
-      </button>
+      <div className="flex items-center justify-between mt-3">
+        <button onClick={onBack} className="flex items-center gap-1.5 rounded-xl px-4 py-2.5 transition-all" style={{ border: '1px solid rgba(10,10,10,0.12)', background: 'white' }}>
+          <ChevronLeft size={15} color="#0a0a0a" />
+          <span style={{ fontFamily: 'Inter,sans-serif', fontSize: 13, fontWeight: 500, color: '#0a0a0a' }}>Back</span>
+        </button>
+        <button onClick={onSubmit} className="flex items-center gap-1.5 rounded-xl px-5 py-2.5 transition-all hover:opacity-90 active:scale-[0.99]" style={{ background: '#0a0a0a' }}>
+          <Sparkles size={14} color="white" />
+          <span style={{ fontFamily: 'Inter,sans-serif', fontWeight: 600, fontSize: 13, color: 'white' }}>Start Research</span>
+          <ArrowRight size={15} color="white" />
+        </button>
+      </div>
     </div>
   );
 }
@@ -1168,7 +1169,7 @@ function LandingView({ onSelectTool, onSelectUseCase, highlightSignal }: { onSel
 
         {/* ── LEFT: Tools ── */}
         <div className="flex flex-col min-w-0">
-          <div className="mb-4 pb-4 border-b border-[rgba(10,10,10,0.07)]">
+          <div className="mb-4">
             <div className="flex items-center gap-2 mb-1.5">
               <span className="rounded-md px-2 py-0.5" style={{ background: 'linear-gradient(to right, #eef2ff, #ede9fe)', fontFamily: 'Inter,sans-serif', fontSize: 10, fontWeight: 700, color: '#7c3aed', letterSpacing: '0.5px' }}>DIRECT ACCESS</span>
             </div>
@@ -1221,27 +1222,12 @@ function LandingView({ onSelectTool, onSelectUseCase, highlightSignal }: { onSel
             boxShadow: highlightWorkflow ? '0 0 0 2px rgba(99,102,241,0.35), 0 8px 28px rgba(99,102,241,0.18)' : 'none',
           }}
         >
-          <div className="mb-4 pb-4 border-b border-[rgba(10,10,10,0.07)]">
+          <div className="mb-4">
             <div className="flex items-center gap-2 mb-1.5">
               <span className="rounded-md px-2 py-0.5" style={{ background: 'linear-gradient(to right, #eef2ff, #ede9fe)', fontFamily: 'Inter,sans-serif', fontSize: 10, fontWeight: 700, color: '#7c3aed', letterSpacing: '0.5px' }}>GUIDED WORKFLOW</span>
             </div>
             <p style={{ fontFamily: 'Inter,sans-serif', fontWeight: 600, fontSize: 17, color: '#0a0a0a', letterSpacing: '-0.2px' }}>Start with a Goal</p>
             <p style={{ fontFamily: 'Inter,sans-serif', fontSize: 13, color: 'rgba(10,10,10,0.5)', marginTop: 3, lineHeight: '20px' }}>Tell us what you're trying to accomplish</p>
-          </div>
-
-          {/* Mini 4-step strip */}
-          <div className="flex items-center gap-1 mb-4 px-3 py-2.5 rounded-xl overflow-hidden" style={{ background: '#fbfbfb', border: '1px solid #f1f1f1' }}>
-            {STEP_LABELS.map((label, i) => (
-              <div key={label} className="flex items-center gap-1 flex-1 min-w-0 last:flex-none">
-                <div className="flex items-center gap-1.5 min-w-0 shrink">
-                  <div className="flex items-center justify-center rounded-full shrink-0" style={{ width: 16, height: 16, background: '#EDE9FE' }}>
-                    <span style={{ fontFamily: 'Inter,sans-serif', fontSize: 8, fontWeight: 700, color: '#7C3AED' }}>{i + 1}</span>
-                  </div>
-                  <span className="truncate" style={{ fontFamily: 'Inter,sans-serif', fontSize: 10, fontWeight: 500, color: 'rgba(10,10,10,0.55)' }}>{label}</span>
-                </div>
-                {i < 3 && <div className="shrink-0 mx-1" style={{ height: 1, width: 8, background: 'rgba(10,10,10,0.12)' }} />}
-              </div>
-            ))}
           </div>
 
           {/* Use case cards */}
@@ -1265,8 +1251,7 @@ function LandingView({ onSelectTool, onSelectUseCase, highlightSignal }: { onSel
                         <span style={{ fontFamily: 'Inter,sans-serif', fontSize: 11, color: isSelected ? 'rgba(76,29,149,0.5)' : 'rgba(10,10,10,0.35)' }}>{uc.tagline}</span>
                       </div>
                       <p style={{ fontFamily: 'Inter,sans-serif', fontSize: 12, color: isSelected ? 'rgba(76,29,149,0.65)' : 'rgba(10,10,10,0.55)', lineHeight: '18px', marginBottom: 8 }}>{uc.description}</p>
-                      <div className="flex items-center gap-1.5 flex-wrap pt-2" style={{ borderTop: `1px solid ${isSelected ? 'rgba(167,139,250,0.3)' : 'rgba(10,10,10,0.07)'}` }}>
-                        <Zap size={10} color={isSelected ? 'rgba(124,58,237,0.45)' : 'rgba(10,10,10,0.3)'} />
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         {uc.tools.map(t => {
                           const tp = TOOL_TAG_PASTELS[t.label];
                           return (
@@ -1317,6 +1302,7 @@ export default function App() {
   const [selectedAudience, setSelectedAudience] = useState<string | null>(null);
   const [criteria, setCriteria] = useState<Criterion[]>([]);
   const [objective, setObjective] = useState('');
+  const [briefFile, setBriefFile] = useState<string | null>(null);
 
   // Tool state
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
@@ -1327,14 +1313,23 @@ export default function App() {
   const [highlightSignal, setHighlightSignal] = useState(0);
   const handleTryWorkflow = () => setHighlightSignal(s => s + 1);
 
-  // Auto-init criteria + objective
+  // Auto-init criteria when use case + context are selected
   useEffect(() => {
     if (selectedUseCase && selectedContext) {
       const defs = getCriteria(selectedUseCase, selectedContext);
       setCriteria(defs.map((d, i) => ({ id: d.id, label: d.label, hint: d.hint, selected: i < 3 })));
-      setObjective(generateObjective(selectedUseCase, selectedContext));
     }
   }, [selectedUseCase, selectedContext]);
+
+  // Generate research objective only after a context brief is uploaded in Step 2.
+  // Clear it if the brief is removed so the objective reflects current input state.
+  useEffect(() => {
+    if (selectedUseCase && selectedContext && briefFile) {
+      setObjective(generateObjective(selectedUseCase, selectedContext));
+    } else {
+      setObjective('');
+    }
+  }, [selectedUseCase, selectedContext, briefFile]);
 
   const handleSelectTool = (id: string) => {
     setSelectedTool(id);
@@ -1345,6 +1340,7 @@ export default function App() {
   const handleSelectUseCase = (id: string) => {
     setSelectedUseCase(id);
     setSelectedContext(null);
+    setBriefFile(null);
     setStep(2);
     setDirection(1);
     setView('workflow');
@@ -1363,13 +1359,14 @@ export default function App() {
   const goForward = () => {
     if (!canContinue()) return;
     setDirection(1);
-    setStep(s => Math.min(s + 1, 4));
+    setStep(s => Math.min(s + 1, 5));
   };
 
   const canContinue = () => {
     if (step === 2) return selectedContext !== null;
-    if (step === 3) return uploadedFiles.length > 0 && selectedAudience !== null;
-    if (step === 4) return criteria.filter(c => c.selected).length > 0;
+    if (step === 3) return uploadedFiles.length > 0;
+    if (step === 4) return selectedAudience !== null;
+    if (step === 5) return criteria.filter(c => c.selected).length > 0;
     return false;
   };
 
@@ -1407,10 +1404,11 @@ export default function App() {
             {view === 'workflow' && selectedUseCase && view !== 'success' && (
               <motion.div key={`workflow-${step}`} custom={direction} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.22, ease: [0.25, 0.1, 0.25, 1] }} style={{ width: '100%', maxWidth: 540 }}>
                 <div className="mb-8"><StepProgress step={step} /></div>
-                {step === 2 && <Step2 useCaseId={selectedUseCase} selected={selectedContext} onSelect={setSelectedContext} />}
-                {step === 3 && <Step3 useCaseId={selectedUseCase} files={uploadedFiles} onFilesChange={setUploadedFiles} audience={selectedAudience} onAudienceChange={setSelectedAudience} />}
-                {step === 4 && selectedContext && <Step4 useCaseId={selectedUseCase} contextId={selectedContext} criteria={criteria} setCriteria={setCriteria} objective={objective} setObjective={setObjective} onSubmit={() => setView('success')} />}
-                {step < 4 && (
+                {step === 2 && <Step2 useCaseId={selectedUseCase} selected={selectedContext} onSelect={setSelectedContext} briefFile={briefFile} onBriefFileChange={setBriefFile} />}
+                {step === 3 && <Step3 useCaseId={selectedUseCase} files={uploadedFiles} onFilesChange={setUploadedFiles} />}
+                {step === 4 && <Step3Audience useCaseId={selectedUseCase} audience={selectedAudience} onAudienceChange={setSelectedAudience} />}
+                {step === 5 && selectedContext && <Step4 useCaseId={selectedUseCase} contextId={selectedContext} criteria={criteria} setCriteria={setCriteria} objective={objective} setObjective={setObjective} onSubmit={() => setView('success')} onBack={goBack} />}
+                {step < 5 && (
                   <div className="flex items-center justify-between mt-7">
                     <button onClick={goBack} className="flex items-center gap-1.5 rounded-xl px-4 py-2.5 transition-all" style={{ border: '1px solid rgba(10,10,10,0.12)', background: 'white' }}>
                       <ChevronLeft size={15} color="#0a0a0a" />

@@ -13,6 +13,7 @@ interface Stage {
   skipReason?: string;
   percent?: number;
   detail?: string;
+  accent?: { color: string; bg: string };
 }
 
 const INITIAL_STAGES: Stage[] = [
@@ -33,19 +34,19 @@ const INITIAL_STAGES: Stage[] = [
     detail: 'of 100 target respondents completed',
   },
   {
+    id: 'heatmap',
+    label: 'Heatmap Analysis',
+    icon: ScanEye,
+    status: 'skipped',
+    annotation: 'Eye-tracking heatmaps will be generated from the uploaded visual assets after survey distribution completes.',
+    accent: { color: '#F97316', bg: '#FFF7ED' },
+  },
+  {
     id: 'analysis',
     label: 'Survey Analysis',
     icon: BrainCircuit,
     status: 'pending',
     annotation: 'AI-powered analysis will begin once the survey reaches 80% completion threshold.',
-  },
-  {
-    id: 'heatmap',
-    label: 'Heatmap Analysis',
-    icon: ScanEye,
-    status: 'skipped',
-    annotation: 'This step was not required for your selected scenario.',
-    skipReason: 'No visual assets were uploaded for eye-tracking in this study.',
   },
   {
     id: 'report',
@@ -63,18 +64,21 @@ const STATUS_CONFIG: Record<StageStatus, { color: string; bg: string; border: st
   skipped:   { color: 'rgba(10,10,10,0.3)', bg: 'rgba(10,10,10,0.03)', border: 'rgba(10,10,10,0.1)', label: 'Skipped' },
 };
 
-function StatusBadge({ status }: { status: StageStatus }) {
-  const cfg = STATUS_CONFIG[status];
+function StatusBadge({ status, accent }: { status: StageStatus; accent?: { color: string; bg: string } }) {
+  const baseCfg = STATUS_CONFIG[status];
+  const color = accent ? accent.color : baseCfg.color;
+  const bg = accent ? accent.bg : baseCfg.bg;
+  const border = accent ? accent.color : baseCfg.border;
   const icons: Record<StageStatus, JSX.Element> = {
-    completed: <CheckCircle2 size={10} color={cfg.color} />,
-    active:    <Loader2 size={10} color={cfg.color} className="animate-spin" />,
-    pending:   <Clock size={10} color={cfg.color} />,
-    skipped:   <SkipForward size={10} color={cfg.color} />,
+    completed: <CheckCircle2 size={10} color={color} />,
+    active:    <Loader2 size={10} color={color} className="animate-spin" />,
+    pending:   <Clock size={10} color={color} />,
+    skipped:   <SkipForward size={10} color={color} />,
   };
   return (
-    <span className="flex items-center gap-1 rounded-full px-2 py-0.5" style={{ background: cfg.bg, border: `1px solid ${cfg.border}` }}>
+    <span className="flex items-center gap-1 rounded-full px-2 py-0.5" style={{ background: bg, border: `1px solid ${border}` }}>
       {icons[status]}
-      <span style={{ fontFamily: 'Inter,sans-serif', fontSize: 10, fontWeight: 600, color: cfg.color, letterSpacing: '0.3px' }}>{cfg.label}</span>
+      <span style={{ fontFamily: 'Inter,sans-serif', fontSize: 10, fontWeight: 600, color, letterSpacing: '0.3px' }}>{baseCfg.label}</span>
     </span>
   );
 }
@@ -86,8 +90,8 @@ function StageNode({ stage, index, total, isLast }: { stage: Stage; index: numbe
   const isSkipped = stage.status === 'skipped';
   const isPending = stage.status === 'pending';
 
-  const nodeColor = isCompleted ? '#059669' : isActive ? '#059669' : 'rgba(10,10,10,0.2)';
-  const nodeBg = isCompleted || isActive ? '#ECFDF5' : '#F9F9F9';
+  const nodeColor = stage.accent ? stage.accent.color : isCompleted ? '#059669' : isActive ? '#059669' : 'rgba(10,10,10,0.2)';
+  const nodeBg = stage.accent ? stage.accent.bg : isCompleted || isActive ? '#ECFDF5' : '#F9F9F9';
 
   // Line fill: completed → full green, else grey
   const lineColor = isCompleted ? '#6EE7B7' : 'rgba(10,10,10,0.08)';
@@ -112,7 +116,7 @@ function StageNode({ stage, index, total, isLast }: { stage: Stage; index: numbe
             ? <stage.icon size={16} color={nodeColor} strokeWidth={2} />
             : isCompleted
               ? <CheckCircle2 size={16} color={nodeColor} strokeWidth={2} />
-              : isSkipped
+              : isSkipped && !stage.accent
                 ? <SkipForward size={16} color={nodeColor} strokeWidth={2} />
                 : <stage.icon size={16} color={nodeColor} strokeWidth={1.5} />
           }
@@ -138,13 +142,13 @@ function StageNode({ stage, index, total, isLast }: { stage: Stage; index: numbe
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: index * 0.12 + 0.05, duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
         className="flex-1 pb-5"
-        style={{ opacity: isPending ? 0.55 : 1 }}
+        style={{ opacity: (isPending || isSkipped) && !stage.accent ? 0.55 : 1 }}
       >
         <div className="flex items-center gap-2 mb-1">
-          <p style={{ fontFamily: 'Inter,sans-serif', fontWeight: 600, fontSize: 13, color: isPending ? 'rgba(10,10,10,0.4)' : '#0a0a0a' }}>
+          <p style={{ fontFamily: 'Inter,sans-serif', fontWeight: 600, fontSize: 13, color: stage.accent ? stage.accent.color : isPending ? 'rgba(10,10,10,0.4)' : '#0a0a0a' }}>
             {stage.label}
           </p>
-          <StatusBadge status={stage.status} />
+          <StatusBadge status={stage.status} accent={stage.accent} />
         </div>
 
         {/* Progress bar for active stage */}
@@ -255,11 +259,11 @@ export function ResearchProgressView() {
         {/* Segmented stage bar */}
         <div className="flex-1 flex flex-col gap-1.5">
           <div className="flex gap-1">
-            {stages.filter(s => s.status !== 'skipped').map((s) => {
+            {stages.filter(s => s.status !== 'skipped' || s.accent).map((s) => {
               const filled = s.status === 'completed';
               const active = s.status === 'active';
               return (
-                <div key={s.id} className="flex-1 rounded-full overflow-hidden" style={{ height: 5, background: filled ? 'transparent' : active ? 'transparent' : 'rgba(139,92,246,0.1)' }}>
+                <div key={s.id} className="flex-1 rounded-full overflow-hidden" style={{ height: 5, background: filled ? 'transparent' : 'rgba(139,92,246,0.1)' }}>
                   {filled && (
                     <motion.div
                       initial={{ scaleX: 0 }} animate={{ scaleX: 1 }}
@@ -284,7 +288,7 @@ export function ResearchProgressView() {
             })}
           </div>
           <span style={{ fontFamily: 'Inter,sans-serif', fontSize: 10.5, color: 'rgba(109,40,217,0.5)' }}>
-            {stages.filter(s => s.status === 'completed').length} of {stages.filter(s => s.status !== 'skipped').length} stages complete
+            {stages.filter(s => s.status === 'completed').length} of {stages.filter(s => s.status !== 'skipped' || s.accent).length} stages complete
           </span>
         </div>
 
@@ -303,7 +307,7 @@ export function ResearchProgressView() {
           Research Timeline
         </p>
         {(() => {
-          const pipeline = stages.filter(s => s.status !== 'skipped');
+          const pipeline = stages.filter(s => s.status !== 'skipped' || s.accent);
           return pipeline.map((stage, i) => (
             <StageNode
               key={stage.id}
@@ -316,7 +320,7 @@ export function ResearchProgressView() {
         })()}
 
         {/* Skipped steps — rendered as a soft informational note, not part of the pipeline */}
-        {stages.some(s => s.status === 'skipped') && (
+        {stages.some(s => s.status === 'skipped' && !s.accent) && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -330,7 +334,7 @@ export function ResearchProgressView() {
                 Not applicable to this research
               </span>
             </div>
-            {stages.filter(s => s.status === 'skipped').map(stage => (
+            {stages.filter(s => s.status === 'skipped' && !s.accent).map(stage => (
               <div key={stage.id} className="flex items-start gap-2.5">
                 <div className="flex items-center justify-center rounded-lg mt-0.5" style={{ width: 26, height: 26, background: 'rgba(139,92,246,0.08)', border: '1px solid #C4B5FD', flexShrink: 0 }}>
                   <stage.icon size={13} color="#A78BFA" strokeWidth={1.5} />
