@@ -1,6 +1,18 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { CheckCircle2, Clock, SkipForward, Loader2, FileBarChart2, Users, BrainCircuit, ScanEye, FileText } from 'lucide-react';
+import { CheckCircle2, Clock, SkipForward, Loader2, FileBarChart2, Users, BrainCircuit, ScanEye, FileText, UserSearch, ChartColumn } from 'lucide-react';
+
+// BookSearch icon — inlined from lucide.dev since lucide-react@0.487.0 doesn't export it yet
+function BookSearch({ size = 24, color = 'currentColor', strokeWidth = 2 }: { size?: number; color?: string; strokeWidth?: number }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M11 22H5.5a1 1 0 0 1 0-5h4.501" />
+      <path d="m21 22-1.879-1.878" />
+      <path d="M3 19.5v-15A2.5 2.5 0 0 1 5.5 2H18a1 1 0 0 1 1 1v8" />
+      <circle cx="17" cy="18" r="3" />
+    </svg>
+  );
+}
 
 type StageStatus = 'completed' | 'active' | 'pending' | 'skipped';
 
@@ -20,14 +32,14 @@ const INITIAL_STAGES: Stage[] = [
   {
     id: 'setup',
     label: 'Research Setup',
-    icon: FileText,
+    icon: BookSearch,
     status: 'completed',
     annotation: 'Research parameters, scenario, and evaluation criteria have been successfully configured.',
   },
   {
     id: 'distribution',
     label: 'Survey Distribution',
-    icon: Users,
+    icon: UserSearch,
     status: 'active',
     percent: 0,
     annotation: 'Surveys are being distributed to target respondents matching your audience profile.',
@@ -44,7 +56,7 @@ const INITIAL_STAGES: Stage[] = [
   {
     id: 'analysis',
     label: 'Survey Analysis',
-    icon: BrainCircuit,
+    icon: ChartColumn,
     status: 'pending',
     annotation: 'AI-powered analysis will begin once the survey reaches 80% completion threshold.',
   },
@@ -91,6 +103,7 @@ function StageNode({ stage, index, total, isLast }: { stage: Stage; index: numbe
   const isPending = stage.status === 'pending';
 
   const nodeColor = stage.accent ? stage.accent.color : isCompleted ? '#059669' : isActive ? '#059669' : 'rgba(10,10,10,0.2)';
+  const nodeBorderColor = stage.accent ? stage.accent.color : cfg.border;
   const nodeBg = stage.accent ? stage.accent.bg : isCompleted || isActive ? '#ECFDF5' : '#F9F9F9';
 
   // Line fill: completed → full green, else grey
@@ -108,14 +121,14 @@ function StageNode({ stage, index, total, isLast }: { stage: Stage; index: numbe
           style={{
             width: 36, height: 36,
             background: nodeBg,
-            border: `2px solid ${nodeColor}`,
+            border: `0.5px solid ${nodeBorderColor}`,
             boxShadow: 'none',
           }}
         >
           {isActive
             ? <stage.icon size={16} color={nodeColor} strokeWidth={2} />
             : isCompleted
-              ? <CheckCircle2 size={16} color={nodeColor} strokeWidth={2} />
+              ? <stage.icon size={16} color={nodeColor} strokeWidth={2} />
               : isSkipped && !stage.accent
                 ? <SkipForward size={16} color={nodeColor} strokeWidth={2} />
                 : <stage.icon size={16} color={nodeColor} strokeWidth={1.5} />

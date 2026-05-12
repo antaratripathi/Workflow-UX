@@ -1,20 +1,21 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ResearchProgressView } from './components/ResearchProgressView';
+import { DashboardView } from './components/DashboardView';
 import {
   Trophy, Rocket, Lightbulb, ChevronRight, ChevronLeft,
   Upload, X, Check, Zap, GripVertical,
   Mail, Image, Smartphone, Monitor, ShoppingBag,
   BarChart3, MessageSquare, Eye, Users, FileText,
   PenLine, LayoutGrid, ArrowRight, CircleCheck, Sparkles,
-  Plus, Clock, Settings, RotateCcw
+  Plus, Clock, Settings, RotateCcw, AlertCircle
 } from 'lucide-react';
 import svgPaths from "../imports/StartANewResearch-1/svg-emgwynddh2";
 import { imgContent } from "../imports/StartANewResearch-1/svg-c2tfl";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
-type AppView = 'landing' | 'workflow' | 'tool' | 'success';
+type AppView = 'dashboard' | 'landing' | 'workflow' | 'tool' | 'success';
 type UploadedFile = { name: string; type: string; size: number; preview?: string };
 type Criterion = { id: string; label: string; hint: string; selected: boolean };
 type CriterionDef = { id: string; label: string; hint: string };
@@ -121,7 +122,7 @@ const USE_CASES = [
   },
   {
     id: 'strategic-concepting',
-    title: 'Strategic Concept Validation',
+    title: 'Launch Readiness',
     tagline: 'Early-stage · Exploration',
     description: 'Explore concept directions with your audience before committing to production assets',
     tools: [
@@ -637,6 +638,7 @@ function Step4({ useCaseId, contextId, criteria, setCriteria, objective, setObje
   const pinnedTotal = selectedCriteria.reduce((s, c) => s + (customWeights[c.id] ?? 0), 0);
   const unpinnedCount = selectedCriteria.filter(c => customWeights[c.id] == null).length;
   const unpinnedShare = unpinnedCount > 0 ? Math.max(0, 100 - pinnedTotal) / unpinnedCount : 0;
+  const weightOverflow = pinnedTotal > 100 || (unpinnedCount === 0 && pinnedTotal !== 100 && selectedCount > 0);
 
   const getWeight = (id: string): number => customWeights[id] ?? unpinnedShare;
 
@@ -720,6 +722,14 @@ function Step4({ useCaseId, contextId, criteria, setCriteria, objective, setObje
               <span style={{ fontFamily: 'Inter,sans-serif', fontSize: 10, fontWeight: 600, color: '#7C3AED' }}>Reset weight</span>
             </button>
           </div>
+          {weightOverflow && (
+            <div className="flex items-center gap-1.5 mt-2 rounded-md px-2 py-1.5" style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.2)' }}>
+              <AlertCircle size={11} color="#DC2626" />
+              <span style={{ fontFamily: 'Inter,sans-serif', fontSize: 11, color: '#DC2626', lineHeight: '15px' }}>
+                Total weight exceeds 100% ({Math.round(pinnedTotal)}%). Click <span style={{ fontWeight: 600 }}>Reset weight</span> to reset.
+              </span>
+            </div>
+          )}
         </div>
         <div className="bg-white divide-y divide-[rgba(10,10,10,0.06)]">
           {criteria.map((c, idx) => {
@@ -1074,6 +1084,9 @@ function AnnouncementStrip({ open, expanded, onToggleExpand, onDismiss, onTry }:
           style={{
             background: 'linear-gradient(90deg, #EEF2FF 0%, #F5F3FF 60%, #FFF1F3 100%)',
             boxShadow: '0 1px 0 0 rgba(99,102,241,0.18)',
+            position: 'sticky',
+            top: 0,
+            zIndex: 50,
           }}
         >
           <div className="flex items-center gap-2.5 px-6 py-2">
@@ -1291,7 +1304,7 @@ function LandingView({ onSelectTool, onSelectUseCase, highlightSignal }: { onSel
 // ─── Main App ─────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const [view, setView] = useState<AppView>('landing');
+  const [view, setView] = useState<AppView>('dashboard');
   const [direction, setDirection] = useState(1);
 
   // Workflow state
@@ -1311,7 +1324,10 @@ export default function App() {
   const [bannerOpen, setBannerOpen] = useState(true);
   const [bannerExpanded, setBannerExpanded] = useState(false);
   const [highlightSignal, setHighlightSignal] = useState(0);
-  const handleTryWorkflow = () => setHighlightSignal(s => s + 1);
+  const handleTryWorkflow = () => {
+    setHighlightSignal(s => s + 1);
+    if (view !== 'landing') { setDirection(1); setView('landing'); }
+  };
 
   // Auto-init criteria when use case + context are selected
   useEffect(() => {
@@ -1384,7 +1400,7 @@ export default function App() {
       {/* <NavBar onBack={showBack ? goBack : undefined} backLabel={backLabel} /> */}
 
       <div className="absolute inset-0 overflow-y-auto" style={{ paddingTop: 0 }}>
-        {view === 'landing' && (
+        {(view === 'landing' || view === 'dashboard') && (
           <AnnouncementStrip
             open={bannerOpen}
             expanded={bannerExpanded}
@@ -1393,6 +1409,10 @@ export default function App() {
             onTry={handleTryWorkflow}
           />
         )}
+        {view === 'dashboard' && (
+          <DashboardView onNewResearch={() => { setHighlightSignal(0); setDirection(1); setView('landing'); }} />
+        )}
+        {view !== 'dashboard' && (
         <div className="flex flex-col items-center py-10 px-6 min-h-full">
           <AnimatePresence mode="wait" custom={direction}>
             {view === 'landing' && (
@@ -1436,6 +1456,7 @@ export default function App() {
             )}
           </AnimatePresence>
         </div>
+        )}
       </div>
     </div>
   );
