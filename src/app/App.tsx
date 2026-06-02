@@ -158,21 +158,21 @@ const CRITERIA_BY_CONTEXT: Record<string, CriterionDef[]> = {
   'pick-a-winner::email-body': [
     { id: 'drive-conversion', label: 'Drive Conversion (click intent)', hint: 'Does the creative create a strong and immediate desire to click and explore further?' },
     { id: 'clarity', label: 'Clarity of Message / Offer', hint: 'Can the user understand the exact offer and key message within seconds without cognitive load?' },
-    { id: 'brand-fit', label: 'Brand Fit', hint: 'Does the creative align with brand tone, identity, and user expectations?' },
+    { id: 'brand-fit', label: 'Brand Attribution', hint: 'Does the creative align with brand tone, identity, and user expectations?' },
     { id: 'value-comm', label: 'Value Communication', hint: 'Is the benefit compelling enough for the user to care and act?' },
     { id: 'visual-hierarchy', label: 'Visual Hierarchy', hint: 'Does the design guide attention in the right order (offer → value → CTA) without confusion?' },
   ],
   'pick-a-winner::email-subject': [
     { id: 'open-intent', label: 'Drive Conversion (Open Intent)', hint: 'Does the subject line create a strong and immediate desire to open the email?' },
     { id: 'drive-engagement', label: 'Drive Engagement', hint: 'Does the subject line spark curiosity and interest to explore further?' },
-    { id: 'brand-fit', label: 'Brand Fit', hint: 'Does the subject line align with brand tone, identity, and user expectations?' },
+    { id: 'brand-fit', label: 'Brand Attribution', hint: 'Does the subject line align with brand tone, identity, and user expectations?' },
     { id: 'clarity', label: 'Clarity of Message', hint: 'Can the user understand the key message immediately without cognitive load?' },
   ],
   'pick-a-winner::paid-social': [
     { id: 'overall-appeal', label: 'Overall Appeal', hint: 'How attractive, engaging, and pleasant the ad is to look at?' },
     { id: 'drive-conversion', label: 'Drive Conversion', hint: 'How likely is this ad to make you consider exploring or purchasing the product?' },
     { id: 'clarity', label: 'Clarity of Message', hint: 'How clearly the ad explains the benefit or advantage of the product or offer?' },
-    { id: 'brand-fit', label: 'Brand Fit', hint: 'Does the ad align with brand tone, identity, and user expectations?' },
+    { id: 'brand-fit', label: 'Brand Attribution', hint: 'Does the ad align with brand tone, identity, and user expectations?' },
     { id: 'trust', label: 'Trust & Credibility', hint: 'Is the ad believable, honest, and credible?' },
   ],
   'pick-a-winner::social-post': [
@@ -194,7 +194,7 @@ const CRITERIA_BY_CONTEXT: Record<string, CriterionDef[]> = {
     { id: 'clarity', label: 'Clarity of Message', hint: 'How easy is it to understand the main message, product, or offer right away?' },
     { id: 'value-comm', label: 'Value Communication', hint: 'How clearly does the ad show the deal, savings, or benefit being offered?' },
     { id: 'drive-conversion', label: 'Drive Conversion', hint: 'How likely is the ad to make you take the next step (click, explore, or shop)?' },
-    { id: 'brand-fit', label: 'Brand Fit', hint: "How well does the ad align with the brand's tone, style, and overall feel?" },
+    { id: 'brand-fit', label: 'Brand Attribution', hint: "How well does the ad align with the brand's tone, style, and overall feel?" },
   ],
   'launch-readiness::paid-social': [
     { id: 'clarity', label: 'Clarity of Message', hint: 'Is the main message immediately clear without confusion?' },
