@@ -1,0 +1,8 @@
+# Dependencies
+node_modules/
+
+# Local Claude Code dev helper (machine-specific paths)
+.claude/launch.json
+
+# macOS
+.DS_Store

@@ -100,7 +100,7 @@ const USE_CASES = [
     id: 'pick-a-winner',
     title: 'Pick a Winner',
     tagline: 'A/B · Multi-variant decision',
-    description: 'Identify the strongest creative from 2 or more assets, and understand why it wins',
+    description: 'Helps teams identify the strongest creative from two or more assets, and understand why it wins',
     tools: [
       { label: 'Creative Ranking', color: '#4F6EF7', icon: BarChart3 },
       { label: 'Auto Survey', color: '#10B981', icon: MessageSquare },
@@ -112,7 +112,7 @@ const USE_CASES = [
     id: 'launch-readiness',
     title: 'Strategic Concept Validation',
     tagline: 'Pre-flight · Single asset',
-    description: 'Evaluate a near-final creative for red flags, clarity gaps, and brand risk before go-live',
+    description: 'Evaluates whether a strategic concept, message, or naming direction is clearly understood, differentiated, credible, and emotionally engaging with the target audience—before significant time and budget are committed to development.',
     tools: [
       { label: 'Auto FGD', color: '#F43F5E', icon: MessageSquare },
       { label: 'Heatmap', color: '#F97316', icon: Eye },
@@ -158,21 +158,21 @@ const CRITERIA_BY_CONTEXT: Record<string, CriterionDef[]> = {
   'pick-a-winner::email-body': [
     { id: 'drive-conversion', label: 'Drive Conversion (click intent)', hint: 'Does the creative create a strong and immediate desire to click and explore further?' },
     { id: 'clarity', label: 'Clarity of Message / Offer', hint: 'Can the user understand the exact offer and key message within seconds without cognitive load?' },
-    { id: 'brand-fit', label: 'Brand Fit', hint: 'Does the creative align with brand tone, identity, and user expectations?' },
+    { id: 'brand-fit', label: 'Brand Attribution', hint: 'Does the creative align with brand tone, identity, and user expectations?' },
     { id: 'value-comm', label: 'Value Communication', hint: 'Is the benefit compelling enough for the user to care and act?' },
     { id: 'visual-hierarchy', label: 'Visual Hierarchy', hint: 'Does the design guide attention in the right order (offer → value → CTA) without confusion?' },
   ],
   'pick-a-winner::email-subject': [
     { id: 'open-intent', label: 'Drive Conversion (Open Intent)', hint: 'Does the subject line create a strong and immediate desire to open the email?' },
     { id: 'drive-engagement', label: 'Drive Engagement', hint: 'Does the subject line spark curiosity and interest to explore further?' },
-    { id: 'brand-fit', label: 'Brand Fit', hint: 'Does the subject line align with brand tone, identity, and user expectations?' },
+    { id: 'brand-fit', label: 'Brand Attribution', hint: 'Does the subject line align with brand tone, identity, and user expectations?' },
     { id: 'clarity', label: 'Clarity of Message', hint: 'Can the user understand the key message immediately without cognitive load?' },
   ],
   'pick-a-winner::paid-social': [
     { id: 'overall-appeal', label: 'Overall Appeal', hint: 'How attractive, engaging, and pleasant the ad is to look at?' },
     { id: 'drive-conversion', label: 'Drive Conversion', hint: 'How likely is this ad to make you consider exploring or purchasing the product?' },
     { id: 'clarity', label: 'Clarity of Message', hint: 'How clearly the ad explains the benefit or advantage of the product or offer?' },
-    { id: 'brand-fit', label: 'Brand Fit', hint: 'Does the ad align with brand tone, identity, and user expectations?' },
+    { id: 'brand-fit', label: 'Brand Attribution', hint: 'Does the ad align with brand tone, identity, and user expectations?' },
     { id: 'trust', label: 'Trust & Credibility', hint: 'Is the ad believable, honest, and credible?' },
   ],
   'pick-a-winner::social-post': [
@@ -194,7 +194,7 @@ const CRITERIA_BY_CONTEXT: Record<string, CriterionDef[]> = {
     { id: 'clarity', label: 'Clarity of Message', hint: 'How easy is it to understand the main message, product, or offer right away?' },
     { id: 'value-comm', label: 'Value Communication', hint: 'How clearly does the ad show the deal, savings, or benefit being offered?' },
     { id: 'drive-conversion', label: 'Drive Conversion', hint: 'How likely is the ad to make you take the next step (click, explore, or shop)?' },
-    { id: 'brand-fit', label: 'Brand Fit', hint: "How well does the ad align with the brand's tone, style, and overall feel?" },
+    { id: 'brand-fit', label: 'Brand Attribution', hint: "How well does the ad align with the brand's tone, style, and overall feel?" },
   ],
   'launch-readiness::paid-social': [
     { id: 'clarity', label: 'Clarity of Message', hint: 'Is the main message immediately clear without confusion?' },
@@ -618,11 +618,15 @@ function Step4({ useCaseId, contextId, criteria, setCriteria, objective, setObje
   const [editingWeight, setEditingWeight] = useState<string | null>(null);
   const [editWeightValue, setEditWeightValue] = useState('');
 
+  // Brand name input (shown when brand-fit criterion is selected)
+  const [brandName, setBrandName] = useState('');
+
   // Reset weights when context changes
-  useEffect(() => { setCustomWeights({}); setEditingWeight(null); }, [useCaseId, contextId]);
+  useEffect(() => { setCustomWeights({}); setEditingWeight(null); setBrandName(''); }, [useCaseId, contextId]);
 
   const toggle = (id: string) => {
-    setCriteria(criteria.map(c => c.id === id ? { ...c, selected: !c.selected } : c));
+    const updated = criteria.map(c => c.id === id ? { ...c, selected: !c.selected } : c);
+    setCriteria([...updated.filter(c => c.selected), ...updated.filter(c => !c.selected)]);
     setCustomWeights(prev => { const n = { ...prev }; delete n[id]; return n; });
   };
 
@@ -690,7 +694,7 @@ function Step4({ useCaseId, contextId, criteria, setCriteria, objective, setObje
         <div className="flex items-center gap-2 px-4 py-3 border-b border-[rgba(10,10,10,0.07)]" style={{ background: 'rgba(10,10,10,0.02)' }}>
           <PenLine size={13} color="rgba(10,10,10,0.45)" />
           <p style={{ fontFamily: 'Inter,sans-serif', fontWeight: 600, fontSize: 12, color: 'rgba(10,10,10,0.5)', letterSpacing: '0.4px', textTransform: 'uppercase' }}>Research Objective</p>
-          <span className="ml-auto rounded-full px-2 py-0.5" style={{ background: 'rgba(124,58,237,0.1)', fontFamily: 'Inter,sans-serif', fontSize: 10, fontWeight: 600, color: '#7C3AED' }}>Auto-generated · Editable</span>
+          <span className="ml-auto rounded-full px-2 py-0.5" style={{ background: 'rgba(37,99,235,0.08)', fontFamily: 'Inter,sans-serif', fontSize: 10, fontWeight: 500, color: '#2563EB' }}>Auto-generated · Editable</span>
         </div>
         <textarea value={objective} onChange={e => setObjective(e.target.value)} className="w-full resize-none outline-none bg-white px-4 py-3" rows={3} style={{ fontFamily: 'Inter,sans-serif', fontSize: 13, color: '#0a0a0a', lineHeight: '21px' }} />
       </div>
@@ -715,11 +719,11 @@ function Step4({ useCaseId, contextId, criteria, setCriteria, objective, setObje
               setCriteria(defs.map((d, i) => ({ id: d.id, label: d.label, hint: d.hint, selected: i < 3 })));
               setCustomWeights({});
               setEditingWeight(null);
-            }} className="ml-auto flex items-center gap-1 rounded-full px-2 py-0.5 transition-all hover:bg-[rgba(124,58,237,0.08)]"
-              style={{ background: 'rgba(124,58,237,0.06)', border: '1px solid rgba(124,58,237,0.18)' }}
+            }} className="ml-auto flex items-center gap-1 rounded-full px-2 py-0.5 transition-all hover:bg-[rgba(220,38,38,0.08)]"
+              style={{ background: 'rgba(220,38,38,0.05)', border: '1px solid rgba(220,38,38,0.18)' }}
               title="Reset to system-suggested percentages">
-              <RotateCcw size={10} color="#7C3AED" />
-              <span style={{ fontFamily: 'Inter,sans-serif', fontSize: 10, fontWeight: 600, color: '#7C3AED' }}>Reset weight</span>
+              <RotateCcw size={10} color="#DC2626" />
+              <span style={{ fontFamily: 'Inter,sans-serif', fontSize: 10, fontWeight: 600, color: '#DC2626' }}>Reset weight</span>
             </button>
           </div>
           {weightOverflow && (
@@ -739,8 +743,8 @@ function Step4({ useCaseId, contextId, criteria, setCriteria, objective, setObje
             const isDragging = dragIndex === idx;
             const isDropTarget = dragOverIndex === idx && dragIndex !== idx;
             return (
+              <div key={c.id}>
               <motion.div
-                key={c.id}
                 layout
                 layoutId={c.id}
                 draggable={c.selected}
@@ -782,6 +786,41 @@ function Step4({ useCaseId, contextId, criteria, setCriteria, objective, setObje
                 <div className="flex-1 min-w-0">
                   <p style={{ fontFamily: 'Inter,sans-serif', fontSize: 13, fontWeight: c.selected ? 600 : 400, color: c.selected ? '#0a0a0a' : 'rgba(10,10,10,0.4)', lineHeight: '20px' }}>{c.label}</p>
                   <p style={{ fontFamily: 'Inter,sans-serif', fontSize: 11, color: 'rgba(10,10,10,0.4)', lineHeight: '16px', marginTop: 2 }}>{c.hint}</p>
+                  {c.id === 'brand-fit' && c.selected && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+                      style={{ overflow: 'hidden' }}
+                    >
+                      <div style={{ height: 1, background: 'rgba(10,10,10,0.07)', marginTop: 10, marginBottom: 10 }} />
+                      <p style={{ fontFamily: 'Inter,sans-serif', fontSize: 11, fontWeight: 400, color: 'rgba(10,10,10,0.7)', lineHeight: '15px', marginTop: 0, marginBottom: 5 }}>
+                        Select the primary brand you would like to evaluate
+                      </p>
+                      <input
+                        type="text"
+                        value={brandName}
+                        onChange={e => setBrandName(e.target.value)}
+                        placeholder="e.g. Nike, Apple, Coca-Cola…"
+                        style={{
+                          width: '100%',
+                          fontFamily: 'Inter,sans-serif',
+                          fontSize: 12,
+                          color: '#0a0a0a',
+                          background: 'white',
+                          border: '1.5px solid rgba(124,58,237,0.25)',
+                          borderRadius: 8,
+                          padding: '7px 10px',
+                          outline: 'none',
+                          lineHeight: '18px',
+                          boxSizing: 'border-box',
+                        }}
+                        onFocus={e => (e.target.style.borderColor = '#7C3AED')}
+                        onBlur={e => (e.target.style.borderColor = 'rgba(124,58,237,0.25)')}
+                      />
+                    </motion.div>
+                  )}
                 </div>
                 <div className="flex items-center gap-1 shrink-0" style={{ height: 20 }}>
                   {c.selected && selectedCount > 0 && (
@@ -803,19 +842,21 @@ function Step4({ useCaseId, contextId, criteria, setCriteria, objective, setObje
                     ) : (
                       <button
                         onClick={() => startEditWeight(c.id)}
-                        title={isPinned ? 'Pinned weight — click to edit, clear to reset to auto' : 'Auto weight — click to pin a custom value'}
-                        className="rounded-md px-1.5 py-0.5 mr-1 transition-all hover:opacity-80"
-                        style={{ background: isPinned ? '#DDD6FE' : '#EDE9FE', fontFamily: 'Inter,sans-serif', fontSize: 10, fontWeight: 700, color: isPinned ? '#5B21B6' : '#7C3AED', display: 'inline-flex', alignItems: 'center', gap: 2, minWidth: 34, justifyContent: 'center', border: isPinned ? '1px solid rgba(139,92,246,0.35)' : 'none', cursor: 'pointer' }}
+                        title="Click to edit weight"
+                        className="rounded-md px-1.5 py-0.5 mr-1 transition-all hover:opacity-90"
+                        style={{ background: isPinned ? 'rgba(221,214,254,0.5)' : 'rgba(237,233,254,0.5)', fontFamily: 'Inter,sans-serif', fontSize: 10, fontWeight: 700, color: isPinned ? '#5B21B6' : '#7C3AED', display: 'inline-flex', alignItems: 'center', gap: 3, minWidth: 34, justifyContent: 'center', border: `1.5px solid ${isPinned ? 'rgba(139,92,246,0.5)' : 'rgba(124,58,237,0.3)'}`, cursor: 'text', borderRadius: 6 }}
                       >
+                        <PenLine size={8} color={isPinned ? '#5B21B6' : '#7C3AED'} strokeWidth={2.5} />
                         {formatWeight(getWeight(c.id))}
                       </button>
                     )
                   )}
-                  <button onClick={() => toggle(c.id)} className="flex items-center justify-center rounded-md ml-1 transition-all" style={{ width: 20, height: 20, background: c.selected ? '#7C3AED' : 'transparent', border: c.selected ? 'none' : '1.5px solid rgba(10,10,10,0.2)' }}>
+                  <button onClick={() => toggle(c.id)} className="flex items-center justify-center rounded-md ml-1 transition-all" style={{ width: 20, height: 20, background: c.selected ? '#0a0a0a' : 'transparent', border: c.selected ? 'none' : '1.5px solid rgba(10,10,10,0.2)' }}>
                     {c.selected && <Check size={11} color="white" strokeWidth={2.5} />}
                   </button>
                 </div>
               </motion.div>
+              </div>
             );
           })}
         </div>
